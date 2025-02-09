@@ -1,4 +1,4 @@
-Arturo is a Shiny app that uses a chatbot to take you around the [Cleveland Museum of Art](https://www.clevelandart.org/) (CMA).
+Arturo is a Shiny app that uses a chatbot to take you around the [Cleveland Museum of Art](https://www.clevelandart.org/) (CMA). This app is running [here](https://mpfoley73.shinyapps.io/arturo/).
 
 ![](resources/arturo.png)
 
