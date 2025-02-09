@@ -8,6 +8,7 @@ library(dplyr)
 library(glue)
 library(shinychat)
 library(ellmer)
+library(markdown)
 
 source("setup.R")
 
