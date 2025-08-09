@@ -1,4 +1,4 @@
-# https://openaccess-api.clevelandart.org/?_gl=1*ar606j*_gcl_au*MjAyODkzMTYwNi4xNzM4MzI3NjM1LjExNDg5MjQ1NjUuMTczODMyNzc2MC4xNzM4MzI3Nzk4
+# https://openaccess-api.clevelandart.org/
 # Appendix B: Departments
 department_choices <- c(
   "African Art", "American Painting and Sculpture", "Art of the Americas",
@@ -10,7 +10,7 @@ department_choices <- c(
   "Photography", "Prints", "Textiles"
 )
 
-# https://openaccess-api.clevelandart.org/?_gl=1*ar606j*_gcl_au*MjAyODkzMTYwNi4xNzM4MzI3NjM1LjExNDg5MjQ1NjUuMTczODMyNzc2MC4xNzM4MzI3Nzk4
+# https://openaccess-api.clevelandart.org/
 # Appendix C: Types
 type_choices <- c(
   "Amulets", "Apparatus", "Arms and Armor",
