@@ -9,14 +9,13 @@
 
 library(shiny)
 library(bslib)
-library(shinyjs)  # to disable action buttons
-library(dplyr)
-library(glue)
 library(shinychat)
 library(ellmer)
-library(markdown)
-library(httr2)
+library(shinyjs)  # to disable action buttons
 library(tidyverse)
+library(httr2)
+library(glue)
+library(markdown)
 
 ## -----------------------------------------------------------------------------
 # Setup
@@ -40,7 +39,7 @@ get_open_exhibits <- function() {
     ) |>
     req_perform() |>
     resp_body_json(simplifyVector = TRUE) |>
-    pluck("data") |>
+    purrr::pluck("data") |>
     filter(is_venue_cma == TRUE) |>
     arrange(desc(opening_date))
 }
@@ -54,7 +53,7 @@ get_artworks_for_exhibit <- function(exhibition_id) {
     req_url_query(exhibition_id = exhibition_id) |>
     req_perform() |>
     resp_body_json(simplifyVector = TRUE) |>
-    pluck("data")
+    purrr::pluck("data")
   
   # Possible to have no associated artwork in API.
   if (length(res) == 0) {
@@ -114,14 +113,18 @@ ui <- page_navbar(
       sidebarLayout(
         sidebarPanel(
           width = 5,
-          card(
-            card_header("Let me show you around"),
-            card_body(glue("Select an exhibit currently on display ",
-                           "here at the Cleveland Museum of Art and ",
-                           "we can walk around and chat a bit."))),
+          fluidRow(
+            column(4, tags$img(src = "arturo.png", alt = "Arturo", style = "max-height: 160px")),
+            column(8, card(
+              card_header("Let me show you around"),
+              card_body(glue("Select an exhibit currently on display ",
+                             "here at the Cleveland Museum of Art and ",
+                             "we can walk around and chat a bit.")))
+          )),
+          p(),
           uiOutput("exhibit_selector"),
           p(),
-          card(height = "550px", uiOutput("chat_win"))
+          card(height = "550px", chat_mod_ui("chat_win", placeholder = "Ask Arturo"))
         ),
         mainPanel(
           width = 7,
@@ -133,8 +136,8 @@ ui <- page_navbar(
               width = 12,
               p(textOutput("img_seq_desc")),
               fluidRow(
-                column(4, actionButton("prev_img", "Prevous", width = "130px")),
-                column(2, actionButton("next_img", "Next", width = "130px"))
+                column(4, actionButton("prev_btn", "Prevous", width = "130px")),
+                column(2, actionButton("next_btn", "Next", width = "130px"))
               ), 
               p(),
               card(
@@ -149,7 +152,7 @@ ui <- page_navbar(
             )
           )),
           div(style = "width: 700px; margin: auto", fluidRow(
-            column(4, imageOutput("arturo_icon", height = "160px")),
+            # column(4, imageOutput("arturo_icon", height = "160px")),
             column(8, card(
               card_header("Did you know?"),
               card_body(htmlOutput("did_you_know"))))
@@ -175,13 +178,13 @@ ui <- page_navbar(
 ## -----------------------------------------------------------------------------
 
 server <- function(input, output) {
-  
-  chat_obj <- reactiveVal(
-    ellmer::chat_openai(
-      system_prompt = interpolate_file("system_prompt.md"),
-      model = "gpt-4o-mini"
-    )
+  print(list.files("resources"))
+  chat_obj <- ellmer::chat_openai(
+    system_prompt = interpolate_file("system_prompt.md"),
+    model = "gpt-4.1-mini"
   )
+
+  chat_mod_server("chat_win", chat_obj)
   
   exhibits <- reactiveVal()
   selected_exhibit <- reactiveVal()
@@ -235,11 +238,11 @@ server <- function(input, output) {
     curr_trivia <- curr_item()$did_you_know
     curr_artwork_url <- curr_item()$artwork_url
     shinyjs::toggleState(
-      "prev_img", 
+      "prev_btn", 
       condition = artwork_index() > 1 # enabled if
     )
     shinyjs::toggleState(
-      "next_img", 
+      "next_btn", 
       condition = artwork_index() < nrow(artworks())
     )
     # Manually update chat to include artwork in context.
@@ -251,14 +254,14 @@ server <- function(input, output) {
     new_system_turn <- ellmer::Turn(
       "assistant", 
       contents = list(ellmer::ContentText(new_system_turn_str)))
-    chat_obj()$add_turn(user = new_user_turn, system = new_system_turn)
+    chat_obj$add_turn(user = new_user_turn, system = new_system_turn)
   })
   
-  observeEvent(input$next_img, { 
+  observeEvent(input$next_btn, { 
     artwork_index(min(artwork_index() + 1, nrow(artworks()))) 
   })
   
-  observeEvent(input$prev_img, { 
+  observeEvent(input$prev_btn, { 
     artwork_index(max(artwork_index() - 1, 1)) 
   })
   
@@ -280,19 +283,10 @@ server <- function(input, output) {
   output$url <- renderText({ 
     glue('<a href="{curr_item()$url}" target="_blank">{curr_item()$url}</a>') })
   
-  output$arturo_icon <- renderImage({
-    list(src = "resources/arturo.png", height = "150px")
-  }, deleteFile = FALSE)
-  
-  output$chat_win <- renderUI({
-    shinychat::chat_ui("chat_sc", placeholder = "Ask Arturo")
-  })
-  
-  observeEvent(input$chat_sc_user_input, {
-    stream <- chat_obj()$stream_async(input$chat_sc_user_input)
-    shinychat::chat_append("chat_sc", stream)
-  })
-  
+  # output$arturo_icon <- renderImage({
+  #   list(src = "resources/arturo.png", height = "150px")
+  # }, deleteFile = FALSE)
+
 }
 
 shinyApp(ui = ui, server = server)
